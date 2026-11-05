@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Asistencia - IE</title>
-    <!-- Librería libre y gratuita para leer QR con la cámara -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 15px; background: #f0f2f5; text-align: center; }
@@ -14,21 +13,29 @@
         .mensaje { padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 15px; font-size: 1.1em; display: none; }
         .exito { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        button { background: #2b6cb0; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-size: 15px; cursor: pointer; margin: 5px; }
-        button:hover { background: #2c5282; }
-        .btn-excel { background: #22543d; }
-        .btn-excel:hover { background: #1c4532; }
-        .btn-danger { background: #9b2c2c; }
+        button { color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 14px; cursor: pointer; margin: 4px; font-weight: bold; }
+        .btn-drive { background: #1a73e8; }
+        .btn-drive:hover { background: #1557b0; }
+        .btn-excel { background: #1e7e34; }
+        .btn-danger { background: #dc3545; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #edf2f7; }
+        .campo-responsable { margin-bottom: 12px; text-align: left; font-size: 13px; color: #444; }
+        .campo-responsable input { width: 100%; padding: 8px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; margin-top: 4px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>IEP N° 72313 SANTA ROSA DE HUAYRAPATA</h2>
-    <p style="color: #666; margin-top: -10px;">CONTROL DE ASISTENCIA</p>
+    <h2>Control de Asistencia</h2>
+    <p style="color: #666; margin-top: -8px;">IEP 72313 SANTA ROSA DE HUAYRAPATA</p>
+
+    <!-- Identificador de la persona o puerta que toma asistencia -->
+    <div class="campo-responsable">
+        <label><b>Puerta / Responsable de turno:</b></label>
+        <input type="text" id="responsable" placeholder="Ej: Puerta 1 / Prof. Edgar" onchange="guardarResponsable()">
+    </div>
 
     <!-- Visor de la Cámara -->
     <div id="reader"></div>
@@ -36,20 +43,22 @@
     <!-- Mensaje de confirmación -->
     <div id="mensaje" class="mensaje"></div>
 
-    <!-- Acciones -->
+    <!-- Botones de Acción -->
     <div>
-        <button class="btn-excel" onclick="exportarExcel()">📥 Descargar en Excel</button>
-        <button class="btn-danger" onclick="limpiarRegistros()">🗑️ Borrar Todo</button>
+        <button class="btn-drive" onclick="enviarADrive()">☁️ Enviar a mi Drive</button>
+        <button class="btn-excel" onclick="exportarExcel()">📥 Excel Local</button>
+        <button class="btn-danger" onclick="limpiarRegistros()">🗑️ Limpiar</button>
     </div>
 
-    <!-- Resumen de hoy -->
-    <h3 style="margin-top: 20px; text-align: left;">Últimas Marcaciones (<span id="total">0</span>)</h3>
+    <!-- Resumen -->
+    <h3 style="margin-top: 20px; text-align: left;">Registros Locales (<span id="total">0</span>)</h3>
     <table>
         <thead>
             <tr>
                 <th>Hora</th>
                 <th>DNI</th>
                 <th>Personal</th>
+                <th>Drive</th>
             </tr>
         </thead>
         <tbody id="tabla-cuerpo"></tbody>
@@ -57,34 +66,44 @@
 </div>
 
 <script>
-    // 1. PADRÓN DE PERSONAL DE TU IE (Edita aquí tus profesores y trabajadores)
+    // ========================================================
+    // 1. CONFIGURACIÓN PRINCIPAL (PEGA AQUÍ TU ENLACE DE DRIVE)
+    // ========================================================
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxG_TQ48-e0btOTeJ5pldwpZdr7f6iinxbTWqIaZbhOrkjCyGOizczyJE30vXZQpKkw/exec";
+
+    // 2. PADRÓN DE PERSONAL DE TU IE
     const PADRON = {
-        "80930776": "LIMACHE TICONA, Pedro de Logo (ESTUDIANTE 5TO)",
-        "79595613": "LUQUE TICONA, Jhon Kevin (ESTUDIANTE 5TO)",
-        "79141485": "MAMANI URBINA, Yoselin Fany (ESTUDIANTE 5TO)",
-        "78692244": "CCAMA TICONA, Luz Guadalupe (ESTUDIANTE 6TO)",
-        "78765593": "HANCCO AJAHUANA, Sheyla Xhamira (ESTUDIANTE 6TO)",
-        "78690497": "HUAHUALUQUE GIL, Yordy Oliver (ESTUDIANTE 6TO)",
-        "80930770": "LIPE CHUQUIJA, Neymar Anthony (ESTUDIANTE 6TO)",
-	"80930777": "LUQUE TICONA, Leydi Yarita (ESTUDIANTE 6TO)"
+        "80930776": "LIMACHE TICONA, PEDRO DE LUGO (Estudiante 5to)",
+		"79595613": "LUQUE TICONA, JHON KEVIN (Estudiante 5to)",
+		"79446113": "MAMANI URBINA, YOSELIN FANY (Estudiante 5to)",
+		"78692244": "CCAMA TICONA, LUZ GUADALUPE (Estudiante 6to)",
+		"78765593": "HANCCO AJAHUANA, SHEYLA XHAMIRA (Estudiante 6to)",
+        "78690497": "HUAHUALUQUE GIL, YORDY OLIVER (Estudiante 6to)",
+		"80930770": "LIPE CHUQUIJA, NEYMAR ANTHONY (Estudiante 6to)",
+		"80930770": "LUQUE TICONA, LEYDI YARITA (Estudiante 6to)",
+        "80930777": "PORTO LOPEZ, Edgar (Docente)"
     };
 
     let registros = JSON.parse(localStorage.getItem("asistencia_ie") || "[]");
+    document.getElementById("responsable").value = localStorage.getItem("responsable_ie") || "";
     actualizarTabla();
 
-    // 2. CONFIGURACIÓN DEL ESCÁNER QR
+    function guardarResponsable() {
+        localStorage.setItem("responsable_ie", document.getElementById("responsable").value);
+    }
+
+    // 3. ESCÁNER DE CÁMARA
     const html5QrCode = new Html5Qrcode("reader");
     let ultimoEscaneo = "";
     let tiempoBloqueo = false;
 
     function onScanSuccess(decodedText) {
         let dni = decodedText.trim();
-
         if (tiempoBloqueo && dni === ultimoEscaneo) return;
 
         tiempoBloqueo = true;
         ultimoEscaneo = dni;
-        setTimeout(() => { tiempoBloqueo = false; }, 3000); // 3 segundos de margen
+        setTimeout(() => { tiempoBloqueo = false; }, 3000);
 
         let ahora = new Date();
         let fecha = ahora.toISOString().split("T")[0];
@@ -92,68 +111,122 @@
 
         let nombre = PADRON[dni] || "Personal No Empadronado";
         let esValido = PADRON[dni] !== undefined;
+        let resp = document.getElementById("responsable").value || "General";
 
-        // Guardar asistencia en la memoria del celular/laptop
-        registros.unshift({ fecha: fecha, hora: hora, dni: dni, nombre: nombre });
-        localStorage.setItem("asistencia_ie", JSON.stringify(registros));
+        let nuevoRegistro = {
+            fecha: fecha,
+            hora: hora,
+            dni: dni,
+            nombre: nombre,
+            responsable: resp,
+            dispositivo: navigator.userAgent.includes("Android") ? "Móvil Android" : "Laptop/PC",
+            subidoDrive: false
+        };
 
-        // Sonido de éxito
+        registros.unshift(nuevoRegistro);
+        guardarLocal();
         reproducirBeep(esValido);
-
-        // Mostrar aviso en pantalla
         mostrarMensaje(esValido ? `✅ REGISTRADO: ${nombre}` : `⚠️ DNI ${dni} REGISTRADO (NO EN PADRÓN)`, esValido);
         actualizarTabla();
+
+        // Intentar envío automático inmediato a Drive si hay conexión
+        subirRegistroIndividual(nuevoRegistro);
     }
 
-    // Iniciar cámara trasera por defecto (o webcam en laptop)
     html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         onScanSuccess
     ).catch(err => {
-        mostrarMensaje("Error al abrir cámara: active los permisos.", false);
+        mostrarMensaje("Error al abrir cámara: active permisos.", false);
     });
 
-    // 3. MOSTRAR TABLA EN PANTALLA
+    // 4. ENVÍO A GOOGLE DRIVE
+    function subirRegistroIndividual(item) {
+        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) return;
+        
+        fetch(URL_APPS_SCRIPT, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(item)
+        }).then(() => {
+            item.subidoDrive = true;
+            guardarLocal();
+            actualizarTabla();
+        }).catch(e => {
+            console.log("Sin conexión, queda pendiente de sincronizar.");
+        });
+    }
+
+    function enviarADrive() {
+        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) {
+            alert("Falta configurar la URL de Google Apps Script en el código.");
+            return;
+        }
+
+        let pendientes = registros.filter(r => !r.subidoDrive);
+        let aEnviar = pendientes.length > 0 ? pendientes : registros;
+
+        if (aEnviar.length === 0) {
+            alert("No hay registros para enviar.");
+            return;
+        }
+
+        mostrarMensaje("Sincronizando con Google Drive...", true);
+
+        fetch(URL_APPS_SCRIPT, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(aEnviar)
+        }).then(() => {
+            registros.forEach(r => r.subidoDrive = true);
+            guardarLocal();
+            actualizarTabla();
+            mostrarMensaje("✅ ¡Sincronizado con éxito en tu Google Drive!", true);
+        }).catch(err => {
+            mostrarMensaje("❌ Error de conexión al enviar a Drive.", false);
+        });
+    }
+
+    function guardarLocal() {
+        localStorage.setItem("asistencia_ie", JSON.stringify(registros));
+    }
+
     function actualizarTabla() {
         const cuerpo = document.getElementById("tabla-cuerpo");
         cuerpo.innerHTML = "";
         document.getElementById("total").innerText = registros.length;
 
-        registros.slice(0, 10).forEach(r => {
-            let fila = `<tr><td>${r.hora}</td><td>${r.dni}</td><td>${r.nombre}</td></tr>`;
+        registros.slice(0, 15).forEach(r => {
+            let estadoDrive = r.subidoDrive ? "<span style='color:green;'>✔️ Sí</span>" : "<span style='color:orange;'>⏳ Pend.</span>";
+            let fila = `<tr><td>${r.hora}</td><td>${r.dni}</td><td>${r.nombre}</td><td>${estadoDrive}</td></tr>`;
             cuerpo.innerHTML += fila;
         });
     }
 
-    // 4. DESCARGAR REPORTE DIRECTO A EXCEL (.CSV)
+    // 5. EXPORTAR EXCEL Y LIMPIEZA
     function exportarExcel() {
-        if (registros.length === 0) {
-            alert("No hay asistencias registradas aún.");
-            return;
-        }
-
-        let csvContent = "\uFEFFFecha,Hora,DNI,Apellidos y Nombres\n";
+        if (registros.length === 0) { alert("No hay asistencias registradas."); return; }
+        let csv = "\uFEFFFecha,Hora,DNI,Apellidos y Nombres,Responsable,Subido a Drive\n";
         registros.forEach(r => {
-            csvContent += `"${r.fecha}","${r.hora}","${r.dni}","${r.nombre}"\n`;
+            csv += `"${r.fecha}","${r.hora}","${r.dni}","${r.nombre}","${r.responsable}","${r.subidoDrive ? 'SI' : 'NO'}"\n`;
         });
-
-        let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Asistencia_${new Date().toISOString().split("T")[0]}.csv`);
-        document.body.appendChild(link);
+        link.href = url;
+        link.download = `Asistencia_${new Date().toISOString().split("T")[0]}.csv`;
         link.click();
-        document.body.removeChild(link);
     }
 
     function limpiarRegistros() {
-        if (confirm("¿Seguro que deseas vaciar todos los registros del día? Recuerda descargar el Excel primero.")) {
+        if (confirm("¿Vaciar registros locales de esta pantalla? Recuerda asegurarte de que estén sincronizados a tu Drive.")) {
             registros = [];
-            localStorage.removeItem("asistencia_ie");
+            guardarLocal();
             actualizarTabla();
-            mostrarMensaje("Registros eliminados correctamente.", true);
+            mostrarMensaje("Registros locales vaciados.", true);
         }
     }
 
