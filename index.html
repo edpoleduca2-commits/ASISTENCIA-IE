@@ -3,162 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Asistencia - IE</title>
+    <title>Asistencia Escolar - IE</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 15px; background: #f0f2f5; text-align: center; }
-        .card { background: white; border-radius: 12px; padding: 15px; max-width: 500px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #1a365d; margin-top: 0; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; }
-        .mensaje { padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 15px; font-size: 1.1em; display: none; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 12px; background: #f0f2f5; text-align: center; }
+        .card { background: white; border-radius: 12px; padding: 15px; max-width: 520px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #1a365d; margin-top: 0; font-size: 1.4em; }
+        
+        /* Pantalla de Bloqueo / PIN */
+        #pantalla-login { display: block; padding: 20px 10px; }
+        .input-pin { font-size: 24px; letter-spacing: 10px; text-align: center; width: 160px; padding: 10px; border-radius: 8px; border: 2px solid #2b6cb0; margin: 15px 0; }
+        
+        /* Sistema de Asistencia */
+        #pantalla-sistema { display: none; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+        .mensaje { padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 12px; font-size: 1em; display: none; }
         .exito { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        button { color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 14px; cursor: pointer; margin: 4px; font-weight: bold; }
+        
+        button { color: white; border: none; padding: 9px 13px; border-radius: 6px; font-size: 13px; cursor: pointer; margin: 3px; font-weight: bold; }
         .btn-drive { background: #1a73e8; }
-        .btn-drive:hover { background: #1557b0; }
         .btn-excel { background: #1e7e34; }
+        .btn-whatsapp { background: #25D366; color: white; display: inline-block; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-top: 6px; }
         .btn-danger { background: #dc3545; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .btn-salir { background: #6c757d; font-size: 11px; padding: 5px 9px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
         th { background: #edf2f7; }
-        .campo-responsable { margin-bottom: 12px; text-align: left; font-size: 13px; color: #444; }
-        .campo-responsable input { width: 100%; padding: 8px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; margin-top: 4px; }
+        .barra-docente { display: flex; justify-content: space-between; align-items: center; background: #ebf8ff; border: 1px solid #bee3f8; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 13px; color: #2b6cb0; font-weight: bold; }
+        .opcion-wa { font-size: 12px; color: #444; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Control de Asistencia</h2>
-    <p style="color: #666; margin-top: -8px;">IEP 72313 SANTA ROSA DE HUAYRAPATA</p>
+    <p style="color: #666; margin-top: -8px; font-size: 13px;">Institución Educativa</p>
 
-    <!-- Identificador de la persona o puerta que toma asistencia -->
-    <div class="campo-responsable">
-        <label><b>Puerta / Responsable de turno:</b></label>
-        <input type="text" id="responsable" placeholder="Ej: Puerta 1 / Prof. Edgar" onchange="guardarResponsable()">
+    <!-- 1. PANTALLA DE ACCESO (PIN DE SEGURIDAD) -->
+    <div id="pantalla-login">
+        <p style="font-size: 14px; color: #333;">🔒 Ingrese su <b>Código de Acceso Docente</b>:</p>
+        <input type="password" id="inputPin" class="input-pin" maxlength="4" placeholder="••••"><br>
+        <button style="background: #2b6cb0; padding: 10px 20px;" onclick="validarPin()">Ingresar al Sistema</button>
+        <p id="error-pin" style="color: red; font-size: 12px; display: none; margin-top: 8px;">Código incorrecto. Consulte a Dirección.</p>
     </div>
 
-    <!-- Visor de la Cámara -->
-    <div id="reader"></div>
+    <!-- 2. PANTALLA DEL SISTEMA DE ASISTENCIA -->
+    <div id="pantalla-sistema">
+        <div class="barra-docente">
+            <span>Docente: <span id="docente-activo">-</span></span>
+            <button class="btn-salir" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
 
-    <!-- Mensaje de confirmación -->
-    <div id="mensaje" class="mensaje"></div>
+        <div class="opcion-wa">
+            <label><input type="checkbox" id="autoWhatsapp"> Abrir WhatsApp al registrar</label>
+        </div>
 
-    <!-- Botones de Acción -->
-    <div>
-        <button class="btn-drive" onclick="enviarADrive()">☁️ Enviar a mi Drive</button>
-        <button class="btn-excel" onclick="exportarExcel()">📥 Excel Local</button>
-        <button class="btn-danger" onclick="limpiarRegistros()">🗑️ Limpiar</button>
+        <!-- Visor de Cámara -->
+        <div id="reader"></div>
+
+        <!-- Mensajes y Botón de WhatsApp -->
+        <div id="mensaje" class="mensaje"></div>
+        <div id="contenedor-wa" style="display: none; margin-bottom: 12px;"></div>
+
+        <!-- Acciones -->
+        <div>
+            <button class="btn-drive" onclick="enviarADrive()">☁️ Enviar a Drive</button>
+            <button class="btn-excel" onclick="exportarExcel()">📥 Excel Local</button>
+            <button class="btn-danger" onclick="limpiarRegistros()">🗑️ Limpiar</button>
+        </div>
+
+        <!-- Resumen -->
+        <h3 style="margin-top: 15px; text-align: left; font-size: 14px;">Registros de hoy (<span id="total">0</span>)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Estudiante</th>
+                    <th>WhatsApp</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-cuerpo"></tbody>
+        </table>
     </div>
-
-    <!-- Resumen -->
-    <h3 style="margin-top: 20px; text-align: left;">Registros Locales (<span id="total">0</span>)</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Hora</th>
-                <th>DNI</th>
-                <th>Personal</th>
-                <th>Drive</th>
-            </tr>
-        </thead>
-        <tbody id="tabla-cuerpo"></tbody>
-    </table>
 </div>
 
 <script>
     // ========================================================
-    // 1. CONFIGURACIÓN PRINCIPAL (PEGA AQUÍ TU ENLACE DE DRIVE)
+    // 1. CONFIGURACIÓN GENERAL Y CODIGOS DE ACCESO
     // ========================================================
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxG_TQ48-e0btOTeJ5pldwpZdr7f6iinxbTWqIaZbhOrkjCyGOizczyJE30vXZQpKkw/exec";
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxG_TQ48-0btOTeJ5pldwpZdr7f6iinxbTWqIaZbhOrkjCyGOizczyJE30vXZQpKkw/exec"; // Tu enlace de Google Apps Script
+    const NOMBRE_ESCUELA = "I.E.P. 72313 SANTA ROSA DE HUAYRAPATA";
 
-    // 2. PADRÓN DE PERSONAL DE TU IE
-    const PADRON = {
-        "80930776": "LIMACHE TICONA, PEDRO DE LUGO (Estudiante 5to)",
-		"79595613": "LUQUE TICONA, JHON KEVIN (Estudiante 5to)",
-		"79446113": "MAMANI URBINA, YOSELIN FANY (Estudiante 5to)",
-		"78692244": "CCAMA TICONA, LUZ GUADALUPE (Estudiante 6to)",
-		"78765593": "HANCCO AJAHUANA, SHEYLA XHAMIRA (Estudiante 6to)",
-        "78690497": "HUAHUALUQUE GIL, YORDY OLIVER (Estudiante 6to)",
-		"80930770": "LIPE CHUQUIJA, NEYMAR ANTHONY (Estudiante 6to)",
-		"80930777": "LUQUE TICONA, LEYDI YARITA (Estudiante 6to)",
-		"91476593": "CHOQUEHUANCA TICONA, JAZMIN PAOLA (Estudiante 1ro)",
-		"91385572": "MAMANI MAMANI, GAEL YORDAN (Estudiante 1ro)",
-        "90890898": "ACARAPI TICONA, ANDERSON JHOSEP (Estudiante 2to)",
-		"91112107": "CENCARA MAMANI, NAYELY ARECYELO (Estudiante 2to)",
-		"91067246": "HUAHUALUQUE CAHUAPAZA, ALI DEBRAN (Estudiante 2to)",
-		"90331220": "CHIPANA MAMANI, FRAN ALEXIS (Estudiante 3ro)",
-		"79616162": "CHIPANA GIL, DANIA VERONICA (Estudiante 4to)",
-		"80930787": "GIL MACHACA, NADIN VERONICA (Estudiante 4to)",
-		"90070498": "HUAHUALUQUE CAHUAPAZA, YIMMY JHORDY (Estudiante 4to)",
-		"79674234": "LIPE CHUQUIJA, YOSELIN BRIYITH (Estudiante 4to)",
-		"79794982": "LIPE QUEA, MARIA ELENA (Estudiante 4to)",
-		"47870859": "LUQUE MOLLEAPAZA, JOSE LUIS (Personal Administrativo)",
-		"80644638": "PINTO CAPIA, RICARDO (DOCENTE IV CICLO)",
-		"48399333": "PARIAPAZA ENRIQUEZ, YESENIA (DOCENTE III CICLO)",
-		"41866544": "PORTO LOPEZ, Edgar (DOCENTE)"
+    // Códigos PIN de 4 dígitos para cada docente
+    const DOCENTES_AUTORIZADOS = {
+        "1234": "Prof. Ricardo Pinto (Turno Mañana)",
+        "5678": "Prof. Yesenia Pariapza (Turno Mañana)",
+        "9999": "Edgar Porto / Director"
     };
 
-    let registros = JSON.parse(localStorage.getItem("asistencia_ie") || "[]");
-    document.getElementById("responsable").value = localStorage.getItem("responsable_ie") || "";
-    actualizarTabla();
+    // ========================================================
+    // 2. PADRÓN DE ESTUDIANTES Y TELÉFONOS DE APODERADOS
+    // Formato teléfono: código de país sin '+' (ej. Perú: 51950820858)
+    // ========================================================
+    const PADRON = {
+        "80930776": { nombre: "LIMACHE TICONA, PEDRO DE LUGO", grado: "5to", apoderado: "Mamá de Pedro", telefono: "51997818063" },
+        "79595613": { nombre: "LUQUE TICONA, JHON KEVIN", grado: "5to", apoderado: "Mamá de Kevin", telefono: "51991106161" },
+        "79446113": { nombre: "MAMANI URBINA, YOSELIN FANY", grado: "5to", apoderado: "Papá de Yoselin", telefono: "51974501800" },
+	"78692244": { nombre: "CCAMA TICONA, LUZ GUADALUPE", grado: "6to", apoderado: "Mamá de Guadalupe", telefono: "51951734771" },
+        "78765593": { nombre: "HANCCO AJAHUANA, SHEYLA XHAMIRA", grado: "6to", apoderado: "Mamá de Sheyla", telefono: "51959752040" },
+	"78690497": { nombre: "HUAHUALUQUE GIL, YORDY OLIVER", grado: "6to", apoderado: "Mamá de Yordy", telefono: "51993581111" },
+        "80930770": { nombre: "LIPE CHUQUIJA, NEYMAR ANTHONY", grado: "6to", apoderado: "Mamá de Neymar", telefono: "519997365492" },
+	"80930777": { nombre: "LUQUE TICONA, LEYDI YARITA", grado: "6to", apoderado: "Mamá de Yarita", telefono: "51991106161" },
+        "91476593": { nombre: "CHOQUEHUANCA TICONA, JAZMIN PAOLA", grado: "1ro", apoderado: "Mamá de Jazmin", telefono: "51956327388" },
+	"91385572": { nombre: "MAMANI MAMANI, GAEL YORDAN", grado: "1ro", apoderado: "Mamá de Gael", telefono: "51953438797" },
+        "90890898": { nombre: "ACARAPI TICONA, ANDERSON JHOSEP", grado: "2do", apoderado: "Mamá de Anderson", telefono: "51951734771" },
+	"91112107": { nombre: "CENCARA MAMANI, NAYELY ARECYELO", grado: "2do", apoderado: "Mamá de Nayeli", telefono: "51913748733" },
+        "91067246": { nombre: "HUAHUALUQUE CAHUAPAZA, ALI DEBRAN", grado: "2do", apoderado: "Papá de Ali", telefono: "51900806816" },
+	"90331220": { nombre: "CHIPANA MAMANI, FRAN ALEXIS", grado: "3ro", apoderado: "Mamá de Alexis", telefono: "51974388384" },
+        "79616162": { nombre: "CHIPANA GIL, DANIA VERONICA", grado: "4to", apoderado: "Mamá de Dania", telefono: "51957268588" },
+	"80930787": { nombre: "GIL MACHACA, NADIN VERONICA", grado: "4to", apoderado: "Papá de Nadin", telefono: "51947793819" },
+        "90070498": { nombre: "HUAHUALUQUE CAHUAPAZA, YIMMY JHORDY", grado: "4to", apoderado: "Papá de Yimmy", telefono: "51913748733" },
+	"79674234": { nombre: "LIPE CHUQUIJA, YOSELIN BRIYITH", grado: "4to", apoderado: "Mamá de Yoselin", telefono: "519997365492" },
+        "79794982": { nombre: "LIPE QUEA, MARIA ELENA", grado: "4to", apoderado: "Mamá de Elena", telefono: "51978648480" }
+    };
 
-    function guardarResponsable() {
-        localStorage.setItem("responsable_ie", document.getElementById("responsable").value);
+    let docenteLogueado = sessionStorage.getItem("docente_ie") || "";
+    let registros = JSON.parse(localStorage.getItem("asistencia_ie") || "[]");
+    let html5QrCode = null;
+    let tiempoBloqueo = false;
+    let ultimoDni = "";
+
+    // Iniciar con o sin login
+    if (docenteLogueado) {
+        mostrarSistema();
     }
 
-    // 3. ESCÁNER DE CÁMARA
-    const html5QrCode = new Html5Qrcode("reader");
-    let ultimoEscaneo = "";
-    let tiempoBloqueo = false;
+    function validarPin() {
+        let pin = document.getElementById("inputPin").value;
+        if (DOCENTES_AUTORIZADOS[pin]) {
+            docenteLogueado = DOCENTES_AUTORIZADOS[pin];
+            sessionStorage.setItem("docente_ie", docenteLogueado);
+            document.getElementById("error-pin").style.display = "none";
+            mostrarSistema();
+        } else {
+            document.getElementById("error-pin").style.display = "block";
+        }
+    }
+
+    function cerrarSesion() {
+        sessionStorage.removeItem("docente_ie");
+        if (html5QrCode) html5QrCode.stop().then(() => location.reload());
+        else location.reload();
+    }
+
+    function mostrarSistema() {
+        document.getElementById("pantalla-login").style.display = "none";
+        document.getElementById("pantalla-sistema").style.display = "block";
+        document.getElementById("docente-activo").innerText = docenteLogueado;
+        iniciarCamara();
+        actualizarTabla();
+    }
+
+    // ========================================================
+    // 3. LECTURA QR Y REGISTRO DE ASISTENCIA
+    // ========================================================
+    function iniciarCamara() {
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess
+        ).catch(err => {
+            mostrarMensaje("Error de cámara: active los permisos.", false);
+        });
+    }
 
     function onScanSuccess(decodedText) {
         let dni = decodedText.trim();
-        if (tiempoBloqueo && dni === ultimoEscaneo) return;
+        if (tiempoBloqueo && dni === ultimoDni) return;
 
         tiempoBloqueo = true;
-        ultimoEscaneo = dni;
+        ultimoDni = dni;
         setTimeout(() => { tiempoBloqueo = false; }, 3000);
 
         let ahora = new Date();
         let fecha = ahora.toISOString().split("T")[0];
         let hora = ahora.toLocaleTimeString();
 
-        let nombre = PADRON[dni] || "Personal No Empadronado";
+        let est = PADRON[dni] || { nombre: "Estudiante No Empadronado", grado: "S/G", apoderado: "Apoderado", telefono: "" };
         let esValido = PADRON[dni] !== undefined;
-        let resp = document.getElementById("responsable").value || "General";
 
         let nuevoRegistro = {
             fecha: fecha,
             hora: hora,
             dni: dni,
-            nombre: nombre,
-            responsable: resp,
-            dispositivo: navigator.userAgent.includes("Android") ? "Móvil Android" : "Laptop/PC",
+            nombre: est.nombre,
+            grado: est.grado,
+            apoderado: est.apoderado,
+            telefono: est.telefono,
+            docente: docenteLogueado,
             subidoDrive: false
         };
 
         registros.unshift(nuevoRegistro);
         guardarLocal();
         reproducirBeep(esValido);
-        mostrarMensaje(esValido ? `✅ REGISTRADO: ${nombre}` : `⚠️ DNI ${dni} REGISTRADO (NO EN PADRÓN)`, esValido);
+        mostrarMensaje(esValido ? `✅ REGISTRADO: ${est.nombre}` : `⚠️ DNI ${dni} NO EMPADRONADO`, esValido);
         actualizarTabla();
 
-        // Intentar envío automático inmediato a Drive si hay conexión
+        // Generar enlace de WhatsApp
+        if (est.telefono) {
+            let mensajeTexto = `Estimado(a) ${est.apoderado}, la ${NOMBRE_COLEGIO} le comunica que su hijo(a) *${est.nombre}* (${est.grado}) ingresó a la I.E. hoy a las *${hora}*.`;
+            let urlWa = `https://api.whatsapp.com/send?phone=${est.telefono}&text=${encodeURIComponent(mensajeTexto)}`;
+            
+            let btnWa = document.getElementById("contenedor-wa");
+            btnWa.innerHTML = `<a href="${urlWa}" target="_blank" class="btn-whatsapp">📲 Enviar WhatsApp a ${est.apoderado}</a>`;
+            btnWa.style.display = "block";
+
+            // Si está activada la opción automática
+            if (document.getElementById("autoWhatsapp").checked) {
+                window.open(urlWa, "_blank");
+            }
+        } else {
+            document.getElementById("contenedor-wa").style.display = "none";
+        }
+
+        // Subir a Drive
         subirRegistroIndividual(nuevoRegistro);
     }
 
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess
-    ).catch(err => {
-        mostrarMensaje("Error al abrir cámara: active permisos.", false);
-    });
-
-    // 4. ENVÍO A GOOGLE DRIVE
+    // ========================================================
+    // 4. SINCRONIZACIÓN CON GOOGLE DRIVE
+    // ========================================================
     function subirRegistroIndividual(item) {
         if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) return;
-        
         fetch(URL_APPS_SCRIPT, {
             method: "POST",
             mode: "no-cors",
@@ -168,27 +248,19 @@
             item.subidoDrive = true;
             guardarLocal();
             actualizarTabla();
-        }).catch(e => {
-            console.log("Sin conexión, queda pendiente de sincronizar.");
-        });
+        }).catch(() => {});
     }
 
     function enviarADrive() {
         if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) {
-            alert("Falta configurar la URL de Google Apps Script en el código.");
+            alert("Configure la URL de Google Apps Script en el código.");
             return;
         }
-
         let pendientes = registros.filter(r => !r.subidoDrive);
         let aEnviar = pendientes.length > 0 ? pendientes : registros;
-
-        if (aEnviar.length === 0) {
-            alert("No hay registros para enviar.");
-            return;
-        }
+        if (aEnviar.length === 0) { alert("No hay registros para enviar."); return; }
 
         mostrarMensaje("Sincronizando con Google Drive...", true);
-
         fetch(URL_APPS_SCRIPT, {
             method: "POST",
             mode: "no-cors",
@@ -198,8 +270,8 @@
             registros.forEach(r => r.subidoDrive = true);
             guardarLocal();
             actualizarTabla();
-            mostrarMensaje("✅ ¡Sincronizado con éxito en tu Google Drive!", true);
-        }).catch(err => {
+            mostrarMensaje("✅ ¡Sincronizado con éxito en tu Drive!", true);
+        }).catch(() => {
             mostrarMensaje("❌ Error de conexión al enviar a Drive.", false);
         });
     }
@@ -214,29 +286,28 @@
         document.getElementById("total").innerText = registros.length;
 
         registros.slice(0, 15).forEach(r => {
-            let estadoDrive = r.subidoDrive ? "<span style='color:green;'>✔️ Sí</span>" : "<span style='color:orange;'>⏳ Pend.</span>";
-            let fila = `<tr><td>${r.hora}</td><td>${r.dni}</td><td>${r.nombre}</td><td>${estadoDrive}</td></tr>`;
+            let botonWa = r.telefono ? `<a href="https://api.whatsapp.com/send?phone=${r.telefono}&text=${encodeURIComponent('Asistencia confirmada a las ' + r.hora)}" target="_blank" style="text-decoration:none;">📲 Enviar</a>` : "Sin tlf";
+            let fila = `<tr><td>${r.hora}</td><td><b>${r.nombre}</b><br><small style='color:#666;'>${r.grado}</small></td><td>${botonWa}</td></tr>`;
             cuerpo.innerHTML += fila;
         });
     }
 
-    // 5. EXPORTAR EXCEL Y LIMPIEZA
     function exportarExcel() {
         if (registros.length === 0) { alert("No hay asistencias registradas."); return; }
-        let csv = "\uFEFFFecha,Hora,DNI,Apellidos y Nombres,Responsable,Subido a Drive\n";
+        let csv = "\uFEFFFecha,Hora,DNI,Estudiante,Grado,Apoderado,Telefono,Docente_Turno\n";
         registros.forEach(r => {
-            csv += `"${r.fecha}","${r.hora}","${r.dni}","${r.nombre}","${r.responsable}","${r.subidoDrive ? 'SI' : 'NO'}"\n`;
+            csv += `"${r.fecha}","${r.hora}","${r.dni}","${r.nombre}","${r.grado}","${r.apoderado}","${r.telefono}","${r.docente}"\n`;
         });
         let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.href = url;
-        link.download = `Asistencia_${new Date().toISOString().split("T")[0]}.csv`;
+        link.download = `Asistencia_Estudiantes_${new Date().toISOString().split("T")[0]}.csv`;
         link.click();
     }
 
     function limpiarRegistros() {
-        if (confirm("¿Vaciar registros locales de esta pantalla? Recuerda asegurarte de que estén sincronizados a tu Drive.")) {
+        if (confirm("¿Vaciar registros locales?")) {
             registros = [];
             guardarLocal();
             actualizarTabla();
