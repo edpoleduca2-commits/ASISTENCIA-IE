@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistencia Escolar - IE 72313 SANTA ROSA DE HUAYRAPATA</title>
+    <title>Asistencia Escolar - IE 72313 SANTA ROSA DE HUAYRAPATA-edpóleduca</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 12px; background: #f0f2f5; text-align: center; }
@@ -100,7 +100,8 @@
     const DOCENTES_AUTORIZADOS = {
         "1234": "Prof. Ricardo Pinto (Turno Mañana)",
         "5678": "Prof. Yesenia Pariapaza (Turno Mañana)",
-        "9999": "Edgar Porto / Director"
+        "9999": "Edgar Porto / Director",
+		"0000": "José Luis Luque (Personal Administrativo)
     };
 
     // ========================================================
@@ -111,21 +112,21 @@
         "80930776": { nombre: "LIMACHE TICONA, PEDRO DE LUGO", grado: "5to", apoderado: "Mamá de Pedro", telefono: "51997818063" },
         "79595613": { nombre: "LUQUE TICONA, JHON KEVIN", grado: "5to", apoderado: "Mamá de Kevin", telefono: "51991106161" },
         "79446113": { nombre: "MAMANI URBINA, YOSELIN FANY", grado: "5to", apoderado: "Papá de Yoselin", telefono: "51974501800" },
-	"78692244": { nombre: "CCAMA TICONA, LUZ GUADALUPE", grado: "6to", apoderado: "Mamá de Guadalupe", telefono: "51951734771" },
+		"78692244": { nombre: "CCAMA TICONA, LUZ GUADALUPE", grado: "6to", apoderado: "Mamá de Guadalupe", telefono: "51951734771" },
         "78765593": { nombre: "HANCCO AJAHUANA, SHEYLA XHAMIRA", grado: "6to", apoderado: "Mamá de Sheyla", telefono: "51959752040" },
-	"78690497": { nombre: "HUAHUALUQUE GIL, YORDY OLIVER", grado: "6to", apoderado: "Mamá de Yordy", telefono: "51993581111" },
+		"78690497": { nombre: "HUAHUALUQUE GIL, YORDY OLIVER", grado: "6to", apoderado: "Mamá de Yordy", telefono: "51993581111" },
         "80930770": { nombre: "LIPE CHUQUIJA, NEYMAR ANTHONY", grado: "6to", apoderado: "Mamá de Neymar", telefono: "51997365492" },
-	"80930777": { nombre: "LUQUE TICONA, LEYDI YARITA", grado: "6to", apoderado: "Mamá de Yarita", telefono: "51991106161" },
+		"80930777": { nombre: "LUQUE TICONA, LEYDI YARITA", grado: "6to", apoderado: "Mamá de Yarita", telefono: "51991106161" },
         "91476593": { nombre: "CHOQUEHUANCA TICONA, JAZMIN PAOLA", grado: "1ro", apoderado: "Mamá de Jazmin", telefono: "51956327388" },
-	"91385572": { nombre: "MAMANI MAMANI, GAEL YORDAN", grado: "1ro", apoderado: "Mamá de Gael", telefono: "51953438797" },
+		"91385572": { nombre: "MAMANI MAMANI, GAEL YORDAN", grado: "1ro", apoderado: "Mamá de Gael", telefono: "51953438797" },
         "90890898": { nombre: "ACARAPI TICONA, ANDERSON JHOSEP", grado: "2do", apoderado: "Mamá de Anderson", telefono: "51951734771" },
-	"91112107": { nombre: "CENCARA MAMANI, NAYELY ARECYELO", grado: "2do", apoderado: "Mamá de Nayeli", telefono: "51913748733" },
+		"91112107": { nombre: "CENCARA MAMANI, NAYELY ARECYELO", grado: "2do", apoderado: "Mamá de Nayeli", telefono: "51913748733" },
         "91067246": { nombre: "HUAHUALUQUE CAHUAPAZA, ALI DEBRAN", grado: "2do", apoderado: "Papá de Ali", telefono: "51900806816" },
-	"90331220": { nombre: "CHIPANA MAMANI, FRAN ALEXIS", grado: "3ro", apoderado: "Mamá de Alexis", telefono: "51974388384" },
+		"90331220": { nombre: "CHIPANA MAMANI, FRAN ALEXIS", grado: "3ro", apoderado: "Mamá de Alexis", telefono: "51974388384" },
         "79616162": { nombre: "CHIPANA GIL, DANIA VERONICA", grado: "4to", apoderado: "Mamá de Dania", telefono: "51957268588" },
-	"80930787": { nombre: "GIL MACHACA, NADIN VERONICA", grado: "4to", apoderado: "Papá de Nadin", telefono: "51947793819" },
+		"80930787": { nombre: "GIL MACHACA, NADIN VERONICA", grado: "4to", apoderado: "Papá de Nadin", telefono: "51947793819" },
         "90070498": { nombre: "HUAHUALUQUE CAHUAPAZA, YIMMY JHORDY", grado: "4to", apoderado: "Papá de Yimmy", telefono: "51913748733" },
-	"79674234": { nombre: "LIPE CHUQUIJA, YOSELIN BRIYITH", grado: "4to", apoderado: "Mamá de Yoselin", telefono: "51997365492" },
+		"79674234": { nombre: "LIPE CHUQUIJA, YOSELIN BRIYITH", grado: "4to", apoderado: "Mamá de Yoselin", telefono: "51997365492" },
         "79794982": { nombre: "LIPE QUEA, MARIA ELENA", grado: "4to", apoderado: "Mamá de Elena", telefono: "51978648480" }
     };
 
@@ -238,7 +239,7 @@
     // 4. SINCRONIZACIÓN CON GOOGLE DRIVE
     // ========================================================
     function subirRegistroIndividual(item) {
-        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) return;
+        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("https://docs.google.com/spreadsheets/d/1qlxa8jMd_ibjfrzdaBPjvkyDOVUHCZoFxvH2JXpOQgM/edit?usp=sharing")) return;
         fetch(URL_APPS_SCRIPT, {
             method: "POST",
             mode: "no-cors",
@@ -252,7 +253,7 @@
     }
 
     function enviarADrive() {
-        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) {
+        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("https://docs.google.com/spreadsheets/d/1qlxa8jMd_ibjfrzdaBPjvkyDOVUHCZoFxvH2JXpOQgM/edit?usp=sharing")) {
             alert("Configure la URL de Google Apps Script en el código.");
             return;
         }
