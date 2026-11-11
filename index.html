@@ -1,341 +1,437 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistencia Escolar - IE</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 12px; background: #f0f2f5; text-align: center; }
-        .card { background: white; border-radius: 12px; padding: 15px; max-width: 520px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #1a365d; margin-top: 0; font-size: 1.4em; }
-        
-        /* Pantalla de Bloqueo / PIN */
-        #pantalla-login { display: block; padding: 20px 10px; }
-        .input-pin { font-size: 24px; letter-spacing: 10px; text-align: center; width: 160px; padding: 10px; border-radius: 8px; border: 2px solid #2b6cb0; margin: 15px 0; }
-        
-        /* Sistema de Asistencia */
-        #pantalla-sistema { display: none; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
-        .mensaje { padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 12px; font-size: 1em; display: none; }
-        .exito { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        
-        button { color: white; border: none; padding: 9px 13px; border-radius: 6px; font-size: 13px; cursor: pointer; margin: 3px; font-weight: bold; }
-        .btn-drive { background: #1a73e8; }
-        .btn-excel { background: #1e7e34; }
-        .btn-whatsapp { background: #25D366; color: white; display: inline-block; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-top: 6px; }
-        .btn-danger { background: #dc3545; }
-        .btn-salir { background: #6c757d; font-size: 11px; padding: 5px 9px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-        th { background: #edf2f7; }
-        .barra-docente { display: flex; justify-content: space-between; align-items: center; background: #ebf8ff; border: 1px solid #bee3f8; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 13px; color: #2b6cb0; font-weight: bold; }
-        .opcion-wa { font-size: 12px; color: #444; margin-bottom: 8px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Asistencia - IEP 72313</title>
+<!-- Librería Universal para lectura de códigos QR / Barras -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root { font-family: Arial, sans-serif; color: #1f2937; background: #eef2f7; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 14px; }
+.card { max-width: 760px; margin: auto; background: white; padding: 18px; border-radius: 14px; box-shadow: 0 4px 18px #00000012; }
+h2 { color: #1a365d; margin: 0 0 5px; }
+.sub { color: #64748b; font-size: 13px; margin: 0 0 16px; }
+#pantalla-sistema { display: none; }
+.barra { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; background: #ebf8ff; border: 1px solid #bee3f8; padding: 10px; border-radius: 8px; margin-bottom: 12px; color: #245b8f; font-weight: bold; font-size: 13px; }
+button { border: 0; border-radius: 7px; padding: 10px 13px; margin: 3px; font-weight: bold; cursor: pointer; color: white; background: #2563eb; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.green { background: #16803d; }
+.red { background: #c53030; }
+.gray { background: #64748b; }
+.orange { background: #b45309; }
+input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 16px; max-width: 100%; }
+.pin { font-size: 24px; letter-spacing: 8px; text-align: center; width: 180px; border: 2px solid #2b6cb0; }
+.panel { border: 1px solid #e2e8f0; border-radius: 9px; padding: 12px; margin: 12px 0; text-align: left; }
+#reader { width: 100%; max-width: 420px; margin: 10px auto; min-height: 250px; border-radius: 8px; background: #f8fafc; border: 2px dashed #cbd5e1; }
+.mensaje { display: none; padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: bold; text-align: left; }
+.ok { background: #dcfce7; color: #166534; }
+.bad { background: #fee2e2; color: #991b1b; }
+.info { background: #dbeafe; color: #1e40af; }
+.status { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; margin: 10px 0; }
+.pill { padding: 6px 9px; border-radius: 20px; background: #f1f5f9; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+th, td { border: 1px solid #e2e8f0; padding: 7px; text-align: left; }
+th { background: #edf2f7; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; }
+.hint { font-size: 12px; color: #64748b; line-height: 1.5; }
+@media(max-width:520px){ body{padding:7px} .card{padding:12px} button{font-size:12px; padding:9px} .barra{align-items:flex-start} }
+</style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Control de Asistencia</h2>
-    <p style="color: #666; margin-top: -8px; font-size: 13px;">Institución Educativa</p>
+  <h2>Control de Asistencia</h2>
+  <p class="sub">I.E.P. 72313 SANTA ROSA DE HUAYRAPATA</p>
 
-    <!-- 1. PANTALLA DE ACCESO (PIN DE SEGURIDAD) -->
-    <div id="pantalla-login">
-        <p style="font-size: 14px; color: #333;">🔒 Ingrese su <b>Código de Acceso Docente</b>:</p>
-        <input type="password" id="inputPin" class="input-pin" maxlength="4" placeholder="••••"><br>
-        <button style="background: #2b6cb0; padding: 10px 20px;" onclick="validarPin()">Ingresar al Sistema</button>
-        <p id="error-pin" style="color: red; font-size: 12px; display: none; margin-top: 8px;">Código incorrecto. Consulte a Dirección.</p>
+  <div id="pantalla-login">
+    <p>🔒 Ingrese su <b>Código de Acceso Docente</b>:</p>
+    <input type="password" id="inputPin" class="pin" maxlength="4" inputmode="numeric" placeholder="••••"><br><br>
+    <button onclick="validarPin()">Ingresar al sistema</button>
+    <p id="error-pin" style="display:none;color:#b91c1c">Código incorrecto. Consulte a Dirección.</p>
+  </div>
+
+  <div id="pantalla-sistema">
+    <div class="barra">
+      <span>Docente: <span id="docente-activo">-</span></span>
+      <button class="gray" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
 
-    <!-- 2. PANTALLA DEL SISTEMA DE ASISTENCIA -->
-    <div id="pantalla-sistema">
-        <div class="barra-docente">
-            <span>Docente: <span id="docente-activo">-</span></span>
-            <button class="btn-salir" onclick="cerrarSesion()">Cerrar Sesión</button>
-        </div>
-
-        <div class="opcion-wa">
-            <label><input type="checkbox" id="autoWhatsapp"> Abrir WhatsApp al registrar</label>
-        </div>
-
-        <!-- Visor de Cámara -->
-        <div id="reader"></div>
-
-        <!-- Mensajes y Botón de WhatsApp -->
-        <div id="mensaje" class="mensaje"></div>
-        <div id="contenedor-wa" style="display: none; margin-bottom: 12px;"></div>
-
-        <!-- Acciones -->
-        <div>
-            <button class="btn-drive" onclick="enviarADrive()">☁️ Enviar a Drive</button>
-            <button class="btn-excel" onclick="exportarExcel()">📥 Excel Local</button>
-            <button class="btn-danger" onclick="limpiarRegistros()">🗑️ Limpiar</button>
-        </div>
-
-        <!-- Resumen -->
-        <h3 style="margin-top: 15px; text-align: left; font-size: 14px;">Registros de hoy (<span id="total">0</span>)</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Hora</th>
-                    <th>Estudiante</th>
-                    <th>WhatsApp</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-cuerpo"></tbody>
-        </table>
+    <div class="status">
+      <span class="pill" id="estado-red">● Comprobando conexión…</span>
+      <span class="pill">Guardado local: automático</span>
+      <span class="pill" id="pendientes">Pendientes de envío: 0</span>
     </div>
+
+    <div class="panel">
+      <b>Registrar asistencia (Lector de QR y DNI)</b>
+      <p class="hint">Permita el acceso a la cámara. Si la cámara no abre, utilice la entrada de DNI manual.</p>
+      
+      <div id="reader"></div>
+      
+      <div style="text-align:center; margin-top:10px;">
+        <input id="dniManual" inputmode="numeric" maxlength="12" placeholder="Ingrese o escanee DNI">
+        <button class="green" onclick="registrarManual()">Registrar DNI</button>
+      </div>
+      <br>
+      <label class="hint">
+        <input type="checkbox" id="autoWhatsapp" onchange="guardarOpcionWA(this.checked)"> Abrir WhatsApp al registrar automáticamente
+      </label>
+    </div>
+
+    <div id="mensaje" class="mensaje"></div>
+    <div id="contenedor-wa" style="display:none;margin:10px 0"></div>
+
+    <div class="actions">
+      <button onclick="sincronizarPendientes()">☁️ Sincronizar con Drive</button>
+      <button class="green" onclick="exportarExcel()">📥 Descargar Excel/CSV</button>
+      <button class="orange" onclick="exportarRespaldo()">💾 Copia de seguridad</button>
+      <button class="red" onclick="limpiarRegistros()">🗑️ Limpiar registros</button>
+    </div>
+
+    <h3 style="text-align:left;font-size:14px">Registros guardados (<span id="total">0</span>)</h3>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Estudiante</th>
+            <th>Estado Drive</th>
+            <th>WhatsApp</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-cuerpo"></tbody>
+      </table>
+    </div>
+    <p class="hint">Los datos se guardan de forma local en el navegador del dispositivo.</p>
+  </div>
 </div>
 
 <script>
-    // ========================================================
-    // 1. CONFIGURACIÓN GENERAL Y CODIGOS DE ACCESO
-    // ========================================================
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxwwz6XRAgN48YMtTBdklaD8VeC6616neaROaBcqHhRiYJ1xdcwSVtBFfOwXulzIbcL"; // Tu enlace de Google Apps Script
-    const NOMBRE_ESCUELA = "I.E.P. 72313 SANTA ROSA DE HUAYRAPATA";
+// URL de Google Apps Script Web App
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzEKxucZK4HFYfGzMqAu4cZUAfgknLKF9bmcqbTN0JFFvAhgYUENPVh9-h1kG3CQHtb/exec";
 
-    // Códigos PIN de 4 dígitos para cada docente
-    const DOCENTES_AUTORIZADOS = {
-        "1234": "Prof. Ricardo Pinto (Turno Mañana)",
-        "5678": "Prof. Yesenia Pariapza (Turno Mañana)",
-	"2468": "Prof. Jose Luis Luque (Personal admin Mañana)",
-        "9999": "Edgar Porto / Director"
-    };
+const NOMBRE_ESCUELA = "I.E.P. 72313 SANTA ROSA DE HUAYRAPATA";
+const DOCENTES_AUTORIZADOS = {
+  "1234": "Prof. Ricardo Pinto (Turno Mañana)",
+  "5678": "Prof. Yesenia Pariapza (Turno Mañana)",
+  "2468": "Prof. Jose Luis Luque (Personal admin Mañana)",
+  "9999": "Edgar Porto / Director"
+};
 
-    // ========================================================
-    // 2. PADRÓN DE ESTUDIANTES Y TELÉFONOS DE APODERADOS
-    // Formato teléfono: código de país sin '+' (ej. Perú: 51950820858)
-    // ========================================================
-    const PADRON = {
-        "80930776": { nombre: "LIMACHE TICONA, PEDRO DE LUGO", grado: "5to", apoderado: "Mamá de Pedro", telefono: "51997818063" },
-        "79595613": { nombre: "LUQUE TICONA, JHON KEVIN", grado: "5to", apoderado: "Mamá de Kevin", telefono: "51991106161" },
-        "79446113": { nombre: "MAMANI URBINA, YOSELIN FANY", grado: "5to", apoderado: "Papá de Yoselin", telefono: "51974501800" },
-	"78692244": { nombre: "CCAMA TICONA, LUZ GUADALUPE", grado: "6to", apoderado: "Mamá de Guadalupe", telefono: "51951734771" },
-        "78765593": { nombre: "HANCCO AJAHUANA, SHEYLA XHAMIRA", grado: "6to", apoderado: "Mamá de Sheyla", telefono: "51959752040" },
-	"78690497": { nombre: "HUAHUALUQUE GIL, YORDY OLIVER", grado: "6to", apoderado: "Mamá de Yordy", telefono: "51993581111" },
-        "80930770": { nombre: "LIPE CHUQUIJA, NEYMAR ANTHONY", grado: "6to", apoderado: "Mamá de Neymar", telefono: "51997365492" },
-	"80930777": { nombre: "LUQUE TICONA, LEYDI YARITA", grado: "6to", apoderado: "Mamá de Yarita", telefono: "51991106161" },
-        "91476593": { nombre: "CHOQUEHUANCA TICONA, JAZMIN PAOLA", grado: "1ro", apoderado: "Mamá de Jazmin", telefono: "51956327388" },
-	"91385572": { nombre: "MAMANI MAMANI, GAEL YORDAN", grado: "1ro", apoderado: "Mamá de Gael", telefono: "51953438797" },
-        "90890898": { nombre: "ACARAPI TICONA, ANDERSON JHOSEP", grado: "2do", apoderado: "Mamá de Anderson", telefono: "51951734771" },
-	"91112107": { nombre: "CENCARA MAMANI, NAYELY ARECYELO", grado: "2do", apoderado: "Mamá de Nayeli", telefono: "51913748733" },
-        "91067246": { nombre: "HUAHUALUQUE CAHUAPAZA, ALI DEBRAN", grado: "2do", apoderado: "Papá de Ali", telefono: "51900806816" },
-	"90331220": { nombre: "CHIPANA MAMANI, FRAN ALEXIS", grado: "3ro", apoderado: "Mamá de Alexis", telefono: "51974388384" },
-        "79616162": { nombre: "CHIPANA GIL, DANIA VERONICA", grado: "4to", apoderado: "Mamá de Dania", telefono: "51957268588" },
-	"80930787": { nombre: "GIL MACHACA, NADIN VERONICA", grado: "4to", apoderado: "Papá de Nadin", telefono: "51947793819" },
-        "90070498": { nombre: "HUAHUALUQUE CAHUAPAZA, YIMMY JHORDY", grado: "4to", apoderado: "Papá de Yimmy", telefono: "51913748733" },
-	"79674234": { nombre: "LIPE CHUQUIJA, YOSELIN BRIYITH", grado: "4to", apoderado: "Mamá de Yoselin", telefono: "51997365492" },
-        "79794982": { nombre: "LIPE QUEA, MARIA ELENA", grado: "4to", apoderado: "Mamá de Elena", telefono: "51978648480" }
-    };
+const PADRON = {
+  "80930776": { nombre: "LIMACHE TICONA, PEDRO DE LUGO", grado: "5to", apoderado: "Mamá de Pedro", telefono: "51997818063" },
+  "79595613": { nombre: "LUQUE TICONA, JHON KEVIN", grado: "5to", apoderado: "Mamá de Kevin", telefono: "51991106161" },
+  "79446113": { nombre: "MAMANI URBINA, YOSELIN FANY", grado: "5to", apoderado: "Papá de Yoselin", telefono: "51974501800" },
+  "78692244": { nombre: "CCAMA TICONA, LUZ GUADALUPE", grado: "6to", apoderado: "Mamá de Guadalupe", telefono: "51951734771" },
+  "78765593": { nombre: "HANCCO AJAHUANA, SHEYLA XHAMIRA", grado: "6to", apoderado: "Mamá de Sheyla", telefono: "51959752040" },
+  "78690497": { nombre: "HUAHUALUQUE GIL, YORDY OLIVER", grado: "6to", apoderado: "Mamá de Yordy", telefono: "51993581111" },
+  "80930770": { nombre: "LIPE CHUQUIJA, NEYMAR ANTHONY", grado: "6to", apoderado: "Mamá de Neymar", telefono: "51997365492" },
+  "80930777": { nombre: "LUQUE TICONA, LEYDI YARITA", grado: "6to", apoderado: "Mamá de Yarita", telefono: "51991106161" },
+  "91476593": { nombre: "CHOQUEHUANCA TICONA, JAZMIN PAOLA", grado: "1ro", apoderado: "Mamá de Jazmin", telefono: "51956327388" },
+  "91385572": { nombre: "MAMANI MAMANI, GAEL YORDAN", grado: "1ro", apoderado: "Mamá de Gael", telefono: "51953438797" },
+  "90890898": { nombre: "ACARAPI TICONA, ANDERSON JHOSEP", grado: "2do", apoderado: "Mamá de Anderson", telefono: "51951734771" },
+  "91112107": { nombre: "CENCARA MAMANI, NAYELY ARECYELO", grado: "2do", apoderado: "Mamá de Nayeli", telefono: "51913748733" },
+  "91067246": { nombre: "HUAHUALUQUE CAHUAPAZA, ALI DEBRAN", grado: "2do", apoderado: "Papá de Ali", telefono: "51900806816" },
+  "90331220": { nombre: "CHIPANA MAMANI, FRAN ALEXIS", grado: "3ro", apoderado: "Mamá de Alexis", telefono: "51974388384" },
+  "79616162": { nombre: "CHIPANA GIL, DANIA VERONICA", grado: "4to", apoderado: "Mamá de Dania", telefono: "51957268588" },
+  "80930787": { nombre: "GIL MACHACA, NADIN VERONICA", grado: "4to", apoderado: "Papá de Nadin", telefono: "51947793819" },
+  "90070498": { nombre: "HUAHUALUQUE CAHUAPAZA, YIMMY JHORDY", grado: "4to", apoderado: "Papá de Yimmy", telefono: "51913748733" },
+  "79674234": { nombre: "LIPE CHUQUIJA, YOSELIN BRIYITH", grado: "4to", apoderado: "Mamá de Yoselin", telefono: "51997365492" },
+  "79794982": { nombre: "LIPE QUEA, MARIA ELENA", grado: "4to", apoderado: "Mamá de Elena", telefono: "51978648480" }
+};
 
-    let docenteLogueado = sessionStorage.getItem("docente_ie") || "";
-    let registros = JSON.parse(localStorage.getItem("asistencia_ie") || "[]");
-    let html5QrCode = null;
-    let tiempoBloqueo = false;
-    let ultimoDni = "";
+const STORAGE_KEY = "asistencia_ie";
+const BACKUP_KEY = "asistencia_ie_backup";
+let docenteLogueado = sessionStorage.getItem("docente_ie") || "";
+let registros = cargarRegistros();
+let html5QrcodeScanner = null;
+let ultimoDni = "";
+let ultimoMomento = 0;
 
-    // Iniciar con o sin login
-    if (docenteLogueado) {
-        mostrarSistema();
+function cargarRegistros(){
+  try {
+    const datos = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(datos) ? datos : [];
+  } catch(e) { return []; }
+}
+
+function guardarLocal(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({actualizado:new Date().toISOString(),registros}));
+    actualizarEstado();
+    return true;
+  } catch(e) {
+    mostrarMensaje("No se pudo guardar localmente. Memoria llena.", false);
+    return false;
+  }
+}
+
+function guardarOpcionWA(valor){
+  localStorage.setItem("auto_wa_ie", valor ? "1" : "0");
+}
+
+function cargarOpcionWA(){
+  const pref = localStorage.getItem("auto_wa_ie");
+  const check = document.getElementById("autoWhatsapp");
+  if(check && pref !== null){
+    check.checked = (pref === "1");
+  }
+}
+
+function validarPin(){
+  const pin = document.getElementById("inputPin").value;
+  if(DOCENTES_AUTORIZADOS[pin]){
+    docenteLogueado = DOCENTES_AUTORIZADOS[pin];
+    sessionStorage.setItem("docente_ie", docenteLogueado);
+    document.getElementById("error-pin").style.display = "none";
+    mostrarSistema();
+  } else {
+    document.getElementById("error-pin").style.display = "block";
+  }
+}
+document.getElementById("inputPin").addEventListener("keydown", e => { if(e.key === "Enter") validarPin(); });
+
+function cerrarSesion(){
+  detenerCamara();
+  sessionStorage.removeItem("docente_ie");
+  location.reload();
+}
+
+function mostrarSistema(){
+  document.getElementById("pantalla-login").style.display = "none";
+  document.getElementById("pantalla-sistema").style.display = "block";
+  document.getElementById("docente-activo").textContent = docenteLogueado;
+  cargarOpcionWA();
+  actualizarTabla();
+  actualizarEstado();
+  iniciarCamara();
+}
+if(docenteLogueado) mostrarSistema();
+
+function fechaLocal(d = new Date()){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dia = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${dia}`;
+}
+
+function registrarManual(){
+  const dni = document.getElementById("dniManual").value.trim();
+  if(!dni){ mostrarMensaje("Ingrese el DNI del estudiante.", false); return; }
+  registrarDNI(dni);
+  document.getElementById("dniManual").value = "";
+}
+document.getElementById("dniManual").addEventListener("keydown", e => { if(e.key === "Enter") registrarManual(); });
+
+function registrarDNI(dni){
+  const ahora = Date.now();
+  if(dni === ultimoDni && (ahora - ultimoMomento < 2500)) return;
+  ultimoDni = dni;
+  ultimoMomento = ahora;
+
+  const est = PADRON[dni] || { nombre: "Estudiante No Empadronado", grado: "S/G", apoderado: "Apoderado", telefono: "" };
+  const registro = {
+    id: (crypto.randomUUID ? crypto.randomUUID() : String(ahora) + "-" + Math.random().toString(16).slice(2)),
+    fecha: fechaLocal(),
+    hora: new Date().toLocaleTimeString("es-PE"),
+    dni,
+    nombre: est.nombre,
+    grado: est.grado,
+    apoderado: est.apoderado,
+    telefono: est.telefono,
+    docente: docenteLogueado,
+    subidoDrive: false,
+    estadoDrive: "Pendiente"
+  };
+
+  registros.unshift(registro);
+  if(!guardarLocal()) return;
+  beep(!!PADRON[dni]);
+  mostrarMensaje(PADRON[dni] ? "REGISTRADO: " + est.nombre : "DNI no empadronado. Guardado localmente.", !!PADRON[dni]);
+  actualizarTabla();
+
+  if(est.telefono){
+    // Formato estandarizado de enlace universal WhatsApp wa.me
+    const telLimpio = est.telefono.replace(/\D/g, '');
+    const texto = `Estimado(a) ${est.apoderado}, ${NOMBRE_ESCUELA} comunica que ${est.nombre} (${est.grado}) ingresó a la I.E. a las ${registro.hora}.`;
+    const url = `https://wa.me/${telLimpio}?text=${encodeURIComponent(texto)}`;
+    
+    const cont = document.getElementById("contenedor-wa");
+    cont.innerHTML = "";
+    const a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "📲 Abrir WhatsApp a " + est.apoderado;
+    a.style.cssText = "display:inline-block;background:#16a34a;color:white;padding:9px 12px;border-radius:7px;text-decoration:none;font-weight:bold";
+    cont.appendChild(a);
+    cont.style.display = "block";
+
+    // Envió / Apertura de WhatsApp
+    if(document.getElementById("autoWhatsapp").checked){
+      // Intentar abrir en nueva ventana o redirigir directamente
+      const win = window.open(url, "_blank");
+      if(!win || win.closed || typeof win.closed === 'undefined'){
+        window.location.href = url;
+      }
     }
+  } else {
+    document.getElementById("contenedor-wa").style.display = "none";
+  }
 
-    function validarPin() {
-        let pin = document.getElementById("inputPin").value;
-        if (DOCENTES_AUTORIZADOS[pin]) {
-            docenteLogueado = DOCENTES_AUTORIZADOS[pin];
-            sessionStorage.setItem("docente_ie", docenteLogueado);
-            document.getElementById("error-pin").style.display = "none";
-            mostrarSistema();
-        } else {
-            document.getElementById("error-pin").style.display = "block";
-        }
-    }
+  if(navigator.onLine) sincronizarPendientes();
+}
 
-    function cerrarSesion() {
-        sessionStorage.removeItem("docente_ie");
-        if (html5QrCode) html5QrCode.stop().then(() => location.reload());
-        else location.reload();
-    }
+function iniciarCamara(){
+  if(html5QrcodeScanner) return;
+  
+  html5QrcodeScanner = new Html5Qrcode("reader");
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-    function mostrarSistema() {
-        document.getElementById("pantalla-login").style.display = "none";
-        document.getElementById("pantalla-sistema").style.display = "block";
-        document.getElementById("docente-activo").innerText = docenteLogueado;
-        iniciarCamara();
-        actualizarTabla();
-    }
+  html5QrcodeScanner.start(
+    { facingMode: "environment" },
+    config,
+    (qrCodeMessage) => { registrarDNI(qrCodeMessage.trim()); },
+    (errorMessage) => { /* ignorar errores de lectura continua */ }
+  ).catch(err => {
+    mostrarMensaje("No se inició la cámara (requiere HTTPS o permisos activados). Use registro manual.", false);
+  });
+}
 
-    // ========================================================
-    // 3. LECTURA QR Y REGISTRO DE ASISTENCIA
-    // ========================================================
-    function iniciarCamara() {
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            onScanSuccess
-        ).catch(err => {
-            mostrarMensaje("Error de cámara: active los permisos.", false);
-        });
-    }
+function detenerCamara(){
+  if(html5QrcodeScanner){
+    html5QrcodeScanner.stop().then(() => {
+      html5QrcodeScanner.clear();
+      html5QrcodeScanner = null;
+    }).catch(err => console.error(err));
+  }
+}
 
-    function onScanSuccess(decodedText) {
-        let dni = decodedText.trim();
-        if (tiempoBloqueo && dni === ultimoDni) return;
+function actualizarEstado(){
+  const red = document.getElementById("estado-red");
+  if(red){
+    red.textContent = navigator.onLine ? "● Con conexión" : "● Sin conexión";
+    red.style.color = navigator.onLine ? "#166534" : "#b45309";
+  }
+  const p = document.getElementById("pendientes");
+  if(p) p.textContent = "Pendientes de envío: " + registros.filter(r => !r.subidoDrive).length;
+}
+window.addEventListener("online", () => { actualizarEstado(); sincronizarPendientes(); });
+window.addEventListener("offline", actualizarEstado);
 
-        tiempoBloqueo = true;
-        ultimoDni = dni;
-        setTimeout(() => { tiempoBloqueo = false; }, 3000);
+// Envío a Google Apps Script evitando bloqueos CORS de redirección
+async function enviarLote(lote){
+  const payload = JSON.stringify(lote);
+  
+  // Se usa modo 'no-cors' para asegurar el envío en cualquier navegador móvil o web
+  await fetch(URL_APPS_SCRIPT, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: payload
+  });
+  return true;
+}
 
-        let ahora = new Date();
-        let fecha = ahora.toISOString().split("T")[0];
-        let hora = ahora.toLocaleTimeString();
+let sincronizando = false;
+async function sincronizarPendientes(){
+  if(sincronizando) return;
+  if(!navigator.onLine){ mostrarMensaje("Sin internet. Los datos quedan pendientes.", false); return; }
+  if(!URL_APPS_SCRIPT){ mostrarMensaje("Configure la URL de Google Apps Script.", false); return; }
 
-        let est = PADRON[dni] || { nombre: "Estudiante No Empadronado", grado: "S/G", apoderado: "Apoderado", telefono: "" };
-        let esValido = PADRON[dni] !== undefined;
+  const pendientes = registros.filter(r => !r.subidoDrive);
+  if(!pendientes.length){ mostrarMensaje("Sin registros pendientes por enviar.", true); return; }
 
-        let nuevoRegistro = {
-            fecha: fecha,
-            hora: hora,
-            dni: dni,
-            nombre: est.nombre,
-            grado: est.grado,
-            apoderado: est.apoderado,
-            telefono: est.telefono,
-            docente: docenteLogueado,
-            subidoDrive: false
-        };
+  sincronizando = true;
+  mostrarMensaje("Sincronizando " + pendientes.length + " registro(s) con Google Drive...", true);
 
-        registros.unshift(nuevoRegistro);
-        guardarLocal();
-        reproducirBeep(esValido);
-        mostrarMensaje(esValido ? `✅ REGISTRADO: ${est.nombre}` : `⚠️ DNI ${dni} NO EMPADRONADO`, esValido);
-        actualizarTabla();
+  try {
+    await enviarLote(pendientes);
+    const ids = new Set(pendientes.map(r => r.id));
+    registros.forEach(r => {
+      if(ids.has(r.id)){
+        r.subidoDrive = true;
+        r.estadoDrive = "Sincronizado";
+      }
+    });
+    guardarLocal();
+    actualizarTabla();
+    mostrarMensaje("Registros enviados correctamente a Google Drive / Sheets.", true);
+  } catch(e) {
+    mostrarMensaje("Error al enviar a Drive: " + e.message, false);
+  } finally {
+    sincronizando = false;
+    actualizarEstado();
+  }
+}
 
-        // Generar enlace de WhatsApp
-        if (est.telefono) {
-            let mensajeTexto = `Estimado(a) ${est.apoderado}, la ${NOMBRE_COLEGIO} le comunica que su hijo(a) *${est.nombre}* (${est.grado}) ingresó a la I.E. hoy a las *${hora}*.`;
-            let urlWa = `https://api.whatsapp.com/send?phone=${est.telefono}&text=${encodeURIComponent(mensajeTexto)}`;
-            
-            let btnWa = document.getElementById("contenedor-wa");
-            btnWa.innerHTML = `<a href="${urlWa}" target="_blank" class="btn-whatsapp">📲 Enviar WhatsApp a ${est.apoderado}</a>`;
-            btnWa.style.display = "block";
+function actualizarTabla(){
+  const cuerpo = document.getElementById("tabla-cuerpo");
+  if(!cuerpo) return;
+  cuerpo.innerHTML = "";
+  document.getElementById("total").textContent = registros.length;
+  registros.slice(0, 100).forEach(r => {
+    const tr = document.createElement("tr");
+    const vals = [r.fecha || "", r.hora || "", `${r.nombre || ""} (${r.grado || ""})`, r.subidoDrive ? "Sincronizado" : "Pendiente"];
+    vals.forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
+    const td = document.createElement("td");
+    if(r.telefono){
+      const telLimpio = r.telefono.replace(/\D/g, '');
+      const a = document.createElement("a");
+      a.textContent = "Enviar";
+      a.href = `https://wa.me/${telLimpio}?text=${encodeURIComponent("Asistencia confirmada a las " + r.hora)}`;
+      a.target = "_blank"; a.rel = "noopener";
+      td.appendChild(a);
+    } else td.textContent = "Sin teléfono";
+    tr.appendChild(td);
+    cuerpo.appendChild(tr);
+  });
+  actualizarEstado();
+}
 
-            // Si está activada la opción automática
-            if (document.getElementById("autoWhatsapp").checked) {
-                window.open(urlWa, "_blank");
-            }
-        } else {
-            document.getElementById("contenedor-wa").style.display = "none";
-        }
+function exportarExcel(){
+  if(!registros.length){ alert("No hay asistencias registradas."); return; }
+  const columnas = ["Fecha", "Hora", "DNI", "Estudiante", "Grado", "Apoderado", "Telefono", "Docente", "Estado_Drive"];
+  const filas = registros.map(r => [r.fecha, r.hora, r.dni, r.nombre, r.grado, r.apoderado, r.telefono, r.docente, r.subidoDrive ? "Sincronizado" : "Pendiente"]);
+  const csv = "\uFEFF" + [columnas, ...filas].map(f => f.map(v => '"' + String(v??"").replace(/"/g, '""') + '"').join(",")).join("\r\n");
+  descargar(new Blob([csv], { type: "text/csv;charset=utf-8" }), `Asistencia_${fechaLocal()}.csv`);
+}
 
-        // Subir a Drive
-        subirRegistroIndividual(nuevoRegistro);
-    }
+function exportarRespaldo(){
+  const blob = new Blob([JSON.stringify({ institucion: NOMBRE_ESCUELA, exportado: new Date().toISOString(), registros }, null, 2)], { type: "application/json" });
+  descargar(blob, `Respaldo_Asistencia_${fechaLocal()}.json`);
+}
 
-    // ========================================================
-    // 4. SINCRONIZACIÓN CON GOOGLE DRIVE
-    // ========================================================
-    function subirRegistroIndividual(item) {
-        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) return;
-        fetch(URL_APPS_SCRIPT, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(item)
-        }).then(() => {
-            item.subidoDrive = true;
-            guardarLocal();
-            actualizarTabla();
-        }).catch(() => {});
-    }
+function descargar(blob, nombre){
+  const url = URL.createObjectURL(blob), a = document.getElementById("a_descarga") || document.createElement("a");
+  a.href = url; a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
-    function enviarADrive() {
-        if (!URL_APPS_SCRIPT || URL_APPS_SCRIPT.includes("PEGA_AQUI")) {
-            alert("Configure la URL de Google Apps Script en el código.");
-            return;
-        }
-        let pendientes = registros.filter(r => !r.subidoDrive);
-        let aEnviar = pendientes.length > 0 ? pendientes : registros;
-        if (aEnviar.length === 0) { alert("No hay registros para enviar."); return; }
+function limpiarRegistros(){
+  if(!confirm("¿Desea borrar los registros almacenados localmente en este dispositivo?")) return;
+  registros = [];
+  guardarLocal();
+  actualizarTabla();
+  mostrarMensaje("Registros eliminados.", true);
+}
 
-        mostrarMensaje("Sincronizando con Google Drive...", true);
-        fetch(URL_APPS_SCRIPT, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(aEnviar)
-        }).then(() => {
-            registros.forEach(r => r.subidoDrive = true);
-            guardarLocal();
-            actualizarTabla();
-            mostrarMensaje("✅ ¡Sincronizado con éxito en tu Drive!", true);
-        }).catch(() => {
-            mostrarMensaje("❌ Error de conexión al enviar a Drive.", false);
-        });
-    }
+function mostrarMensaje(txt, exito){
+  const m = document.getElementById("mensaje");
+  m.textContent = txt;
+  m.className = "mensaje " + (exito ? "ok" : "bad");
+  m.style.display = "block";
+}
 
-    function guardarLocal() {
-        localStorage.setItem("asistencia_ie", JSON.stringify(registros));
-    }
-
-    function actualizarTabla() {
-        const cuerpo = document.getElementById("tabla-cuerpo");
-        cuerpo.innerHTML = "";
-        document.getElementById("total").innerText = registros.length;
-
-        registros.slice(0, 15).forEach(r => {
-            let botonWa = r.telefono ? `<a href="https://api.whatsapp.com/send?phone=${r.telefono}&text=${encodeURIComponent('Asistencia confirmada a las ' + r.hora)}" target="_blank" style="text-decoration:none;">📲 Enviar</a>` : "Sin tlf";
-            let fila = `<tr><td>${r.hora}</td><td><b>${r.nombre}</b><br><small style='color:#666;'>${r.grado}</small></td><td>${botonWa}</td></tr>`;
-            cuerpo.innerHTML += fila;
-        });
-    }
-
-    function exportarExcel() {
-        if (registros.length === 0) { alert("No hay asistencias registradas."); return; }
-        let csv = "\uFEFFFecha,Hora,DNI,Estudiante,Grado,Apoderado,Telefono,Docente_Turno\n";
-        registros.forEach(r => {
-            csv += `"${r.fecha}","${r.hora}","${r.dni}","${r.nombre}","${r.grado}","${r.apoderado}","${r.telefono}","${r.docente}"\n`;
-        });
-        let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        let url = URL.createObjectURL(blob);
-        let link = document.createElement("a");
-        link.href = url;
-        link.download = `Asistencia_Estudiantes_${new Date().toISOString().split("T")[0]}.csv`;
-        link.click();
-    }
-
-    function limpiarRegistros() {
-        if (confirm("¿Vaciar registros locales?")) {
-            registros = [];
-            guardarLocal();
-            actualizarTabla();
-            mostrarMensaje("Registros locales vaciados.", true);
-        }
-    }
-
-    function mostrarMensaje(txt, exito) {
-        const msg = document.getElementById("mensaje");
-        msg.innerText = txt;
-        msg.className = "mensaje " + (exito ? "exito" : "error");
-        msg.style.display = "block";
-        setTimeout(() => { msg.style.display = "none"; }, 3500);
-    }
-
-    function reproducirBeep(esValido) {
-        try {
-            let ctx = new (window.AudioContext || window.webkitAudioContext)();
-            let osc = ctx.createOscillator();
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(esValido ? 880 : 300, ctx.currentTime);
-            osc.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.15);
-        } catch(e) {}
-    }
+function beep(valido){
+  try {
+    const c = new(window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator();
+    o.frequency.value = valido ? 880 : 300;
+    o.connect(c.destination);
+    o.start();
+    o.stop(c.currentTime + .14);
+  } catch(e){}
+}
 </script>
-
 </body>
 </html>
